@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Execute Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #code {
+            width: 80%; /* 调整宽度 */
+            height: 300px; /* 调整高度 */
+            margin-bottom: 20px;
+        }
+
+        button {
+            margin-bottom: 20px;
+        }
+
+        p {
+            width: 80%;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="code" placeholder="Enter your Python code here"></textarea>
+    <button onclick="submitCode()">Execute Code</button>
+    <p id="result"></p>
+
+    <script>
+        function submitCode() {
+            const code = document.getElementById('code').value;
+            fetch('/execute_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: code }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerText = 'Output: ' + data.output;
+            });
+        }
+    </script>
+</body>
+</html>
