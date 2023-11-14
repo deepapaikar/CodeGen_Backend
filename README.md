@@ -1,2 +1,2 @@
 # CodeGen
-Autogen+Llama implemented with React.js and Flask
+Autogen+ Local LLM implemented with React.js and Flask
