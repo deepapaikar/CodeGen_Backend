@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat with AutoGen Agents</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+    $(document).ready(function(){
+        $('#chatForm').submit(function(event){
+            event.preventDefault();
+            var userInput = $('#userInput').val();
+            $.ajax({
+                url: '/chat',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ user_input: userInput }),
+                success: function(response) {
+                    $('#chatBox').append('<div><b>You:</b> ' + userInput + '</div>');
+                    $('#chatBox').append('<div><b>Agent:</b> ' + response + '</div>');
+                    $('#userInput').val('');
+                },
+                error: function() {
+                    $('#chatBox').append('<div>Error in response from server.</div>');
+                }
+            });
+        });
+    });
+    </script>
+</head>
+<body>
+    <h1>Chat with AutoGen Agents</h1>
+    <form id="chatForm">
+        <input type="text" id="userInput" placeholder="Type your message here" required>
+        <button type="submit">Send</button>
+    </form>
+    <div id="chatBox" style="margin-top:20px; border:1px solid #ccc; padding:10px; min-height:100px;">
+    </div>
+</body>
+</html>
