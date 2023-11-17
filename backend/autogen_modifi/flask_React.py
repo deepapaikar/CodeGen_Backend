@@ -4,21 +4,21 @@ import autogen
 import uuid
 import os
 import re
-# from flask_cors import CORS
+from flask_cors import CORS
 
+# TODO run the "npm run build" to generate the static files and change the location
 app = Flask(__name__,static_folder='../../frontend/build')
 # CORS(app)
 
 
-# @app.route('/', defaults={'path': ''})
-# @app.route('/<path:path>')
-# def serve(path):
-#     if path != "" and os.path.exists(app.static_folder + '/' + path):
-#         return send_from_directory(app.static_folder, path)
-#     else:
-#         return send_from_directory(app.static_folder, 'index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
     
-
 
 config_list = [
     {
@@ -52,7 +52,7 @@ pattern = re.compile(r"You: (.+?)\nAgent: (.+?)(?=You:|$)", re.DOTALL)
 def chat():
     try:
         data = request.json
-        user_input = data.get('user_input')
+        user_input = data.get('msg')
         user_proxy.initiate_chat(assistant, message=user_input)
         response = user_proxy.get_stored_output()  # the originl output is a string
 
@@ -66,9 +66,9 @@ def chat():
 
 
 
-@app.route('/')
-def index():
-    return app.send_static_file('frontend_runchat.html')
+# @app.route('/')
+# def index():
+#     return app.send_static_file('frontend_runchat.html')
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ app = Flask(__name__)
 config_list = [
     {
         'model': 'gpt-4',
-        'api_key': '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',
+        'api_key': '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',
     }]
 assistant = autogen.AssistantAgent(
     name="assistant",
@@ -54,7 +54,8 @@ def chat():
         data = request.json
         user_input = data.get('user_input')
         user_proxy.initiate_chat(assistant, message=user_input)
-        response = user_proxy.get_stored_output()  # the originl output is a string
+        response_u = user_proxy.get_stored_output()  # the originl output is a string
+        response_a = assistant.get_stored_output()
 
         dialogue = user_proxy.get_stored_output()  # save dialogue for differenet user in dialogue
         matches = pattern.findall(dialogue)
@@ -62,7 +63,7 @@ def chat():
         
     except Exception as e:
         response = {"error": str(e)}
-    return jsonify(response)
+    return jsonify("user_proxy:",response_u,"assistant:",response_a)
 
 
 
