@@ -15,7 +15,7 @@ class Message extends React.Component
         
         if(this.state.msg != '')
         {
-            axios.post('http://127.0.0.1:5000/user',{'msg':this.state.msg})
+            axios.post('http://127.0.0.1:5000/chat',{'msg':this.state.msg})
             .then(res=>{
                 let ch = this.state.chat;
                 ch.push({from:'our',msag:this.state.msg});
