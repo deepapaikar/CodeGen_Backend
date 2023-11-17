@@ -6,7 +6,7 @@ import os
 import re
 # from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder='../../frontend/build')
 # CORS(app)
 
 
