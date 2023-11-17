@@ -7,7 +7,7 @@ go to autogen_modifi floder
 ## step2:run "pip install ."in your terminal
 install packages
 
-## step3:run "pyhton flask_run"
+## step3:run "python flask_run_chat.py"
 run the flask_run_chat.py (you can find the html file in the static/frontend_runchat.html)
 
 ## step4:open website
