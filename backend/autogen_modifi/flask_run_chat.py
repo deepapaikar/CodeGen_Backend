@@ -23,7 +23,7 @@ app = Flask(__name__)
 config_list = [
     {
         'model': 'gpt-4',
-        'api_key': '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',
+        'api_key': '<your api key>',
     }]
 assistant = autogen.AssistantAgent(
     name="assistant",
@@ -50,6 +50,10 @@ pattern = re.compile(r"You: (.+?)\nAgent: (.+?)(?=You:|$)", re.DOTALL)
 
 @app.route('/chat', methods=['POST'])
 def chat():
+
+    response_u = None
+    response_a = None
+
     try:
         data = request.json
         user_input = data.get('user_input')
@@ -62,7 +66,8 @@ def chat():
         dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
         
     except Exception as e:
-        response = {"error": str(e)}
+        response_u = "Error occurred"
+        response_a = str(e)
     return jsonify("user_proxy:",response_u,"assistant:",response_a)
 
 
