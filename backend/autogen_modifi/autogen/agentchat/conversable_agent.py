@@ -1,4 +1,5 @@
 import asyncio
+import websockets
 from collections import defaultdict
 import copy
 import json
@@ -439,6 +440,7 @@ class ConversableAgent(Agent):
 
     def _print_received_message(self, message: Union[Dict, str], sender: Agent):
         # print the message received
+        # content_to_send = {} #xin add   
         f = io.StringIO()  # xin add # 创建一个 StringIO 对象来捕获输出
         with redirect_stdout(f): # xin add
                 print( sender.name, "(to", f"{self.name}):\n", flush=True)
@@ -473,8 +475,9 @@ class ConversableAgent(Agent):
                         )
                         print("*" * len(func_print), flush=True)
                 print("\n", "-" * 80, flush=True, sep="")
-
         self.stored_output += f.getvalue()
+        # content_to_send['message'] = f.getvalue()# xin add to send to frontend in realtime
+        # websocket.send(json.dumps(content_to_send))# xin add to send to frontend in realtime
 
 
     def get_stored_output(self):

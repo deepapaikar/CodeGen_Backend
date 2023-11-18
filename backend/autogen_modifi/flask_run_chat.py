@@ -47,12 +47,35 @@ user_proxy = autogen.UserProxyAgent(
 
 pattern = re.compile(r"You: (.+?)\nAgent: (.+?)(?=You:|$)", re.DOTALL)
 
+def format(message):
+    # Splitting the original chat log into individual messages
+    messages = message.split("--------------------------------------------------------------------------------")
+
+    # Filtering out empty messages
+    messages = [msg.strip() for msg in messages if msg.strip()]
+
+    # Extracting and arranging messages in alternating order
+    user_proxy_messages = [msg for msg in messages if "user_proxy (to assistant):" in msg]
+    assistant_messages = [msg for msg in messages if "assistant (to user_proxy):" in msg]
+
+    # Interleaving messages
+    interleaved_messages = []
+    for i in range(max(len(user_proxy_messages), len(assistant_messages))):
+        if i < len(user_proxy_messages)& i!=0:
+            interleaved_messages.append(user_proxy_messages[i].replace("user_proxy (to assistant):", ""))
+        if i < len(assistant_messages):
+            interleaved_messages.append(assistant_messages[i].replace("assistant (to user_proxy):", ""))
+
+    # Formatting the interleaved messages
+    reformatted_chat_log = "\n--------------------------------------------------------------------------------\n".join(interleaved_messages)
+    return reformatted_chat_log
 
 @app.route('/chat', methods=['POST'])
 def chat():
 
     response_u = None
     response_a = None
+    message_all=None
 
     try:
         data = request.json
@@ -61,14 +84,17 @@ def chat():
         response_u = user_proxy.get_stored_output()  # the originl output is a string
         response_a = assistant.get_stored_output()
 
-        dialogue = user_proxy.get_stored_output()  # save dialogue for differenet user in dialogue
-        matches = pattern.findall(dialogue)
-        dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
+        message_all=response_a+response_u
+        formatted_message = format(message_all)
+
+        # dialogue = user_proxy.get_stored_output()  # save dialogue for differenet user in dialogue
+        # matches = pattern.findall(dialogue)
+        # dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
         
     except Exception as e:
-        response_u = "Error occurred"
-        response_a = str(e)
-    return jsonify("user_proxy:",response_u,"assistant:",response_a)
+        formatted_message = "Error occurred"
+        formatted_message = str(e)
+    return jsonify(formatted_message)
 
 
 
