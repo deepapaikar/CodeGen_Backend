@@ -20,6 +20,11 @@ install_requires = [
     "flaml",
     "python-dotenv",
     "tiktoken",
+    "flask",
+    "flask_socket",
+    "flask_socketio",
+    "flask_login",
+    "websockets"
 ]
 
 setuptools.setup(
