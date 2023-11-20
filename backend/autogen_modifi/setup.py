@@ -21,7 +21,6 @@ install_requires = [
     "python-dotenv",
     "tiktoken",
     "flask",
-    "flask_socket",
     "flask_socketio",
     "flask_login",
     "websockets"
