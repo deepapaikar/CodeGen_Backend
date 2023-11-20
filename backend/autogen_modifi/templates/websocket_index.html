@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Demo</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script type="text/javascript">
+        function cleanLogMessage(message) {
+            // 使用正则表达式删除任何 '(to XXXX)' 部分
+            let cleanedMessage = message.replace(/\(to [^\)]+\)/g, '');
+        
+            // 删除 '---' 和其周围的空格或换行符
+            cleanedMessage = cleanedMessage.replace(/---/g, '').replace(/\n/g, '');
+        
+            return cleanedMessage.trim();
+        }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+            
+            document.getElementById('sendButton').addEventListener('click', () => {
+                var message = document.getElementById('messageInput').value;
+                socket.emit('message', { content: message });
+                document.getElementById('messageInput').value = '';
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to the server');
+            });
+
+            socket.on('message', data => {
+                console.log('Received message:', data);
+                var node = document.createElement("LI");                 // Create a <li> node
+                var textnode = document.createTextNode(data['data']);         // Create a text node
+                textnode.textContent = cleanLogMessage(data['data']);
+                node.appendChild(textnode);                              // Append the text to <li>
+                document.getElementById("messages").appendChild(node);     // Append <li> to <ul> with id="messages"
+                var emptyNode = document.createElement("LI");
+                document.getElementById("messages").appendChild(emptyNode);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>WebSocket Demo</h1>
+    <input type="text" id="messageInput" placeholder="Enter a message...">
+    <button id="sendButton">Send Message</button>
+
+    <ul id="messages"></ul>
+</body>
+</html>
