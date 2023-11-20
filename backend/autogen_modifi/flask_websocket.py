@@ -39,7 +39,7 @@ user_proxys = {}
 assistants = {}
 @socketio.on('connect')
 def handle_connect():
-    join_room(request.sid)  # 加入一个以 session ID 命名的房间
+    join_room(request.sid)  
     user_proxys[request.sid], assistants[request.sid] = create_user_proxy_assistant()
     print('connect', request.sid)
 @socketio.on('message')
@@ -48,18 +48,12 @@ def handle_message(message):
     try:
         user_input = message.get('content')
         user_proxy = user_proxys[request.sid]
-        print(user_input)
-        print(request.sid)
         user_proxy.initiate_chat(assistants[request.sid], message=user_input,socket_room_id=request.sid)
         
         dialogue = user_proxy.get_stored_output()  # save dialogue for differenet user in dialogue
         matches = pattern.findall(dialogue)
         dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
-        print(dialogue)
     except Exception as e:
         response = {"error": str(e)}
-      # 调用自定义方法处理消息
-        print(response)
-    # emit('message', {'content': 'hello'}, room=request.sid)  # 发送消息到指定房间
 if __name__ == '__main__':
     socketio.run(app, debug=True,port=5002)
