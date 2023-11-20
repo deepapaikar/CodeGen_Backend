@@ -7,6 +7,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from autogen import OpenAIWrapper
 from .agent import Agent
+from flask_socketio import SocketIO, emit
 import io
 from contextlib import redirect_stdout
 from autogen.code_utils import (
@@ -305,6 +306,7 @@ class ConversableAgent(Agent):
         recipient: Agent,
         request_reply: Optional[bool] = None,
         silent: Optional[bool] = False,
+        socket_room_id: Optional[str] = None,
     ) -> bool:
         """Send a message to another agent.
 
@@ -342,7 +344,7 @@ class ConversableAgent(Agent):
         # unless it's "function".
         valid = self._append_oai_message(message, "assistant", recipient)
         if valid:
-            recipient.receive(message, self, request_reply, silent)
+            recipient.receive(message, self, request_reply, silent, socket_room_id=socket_room_id)
         else:
             raise ValueError(
                 "Message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
@@ -437,14 +439,14 @@ class ConversableAgent(Agent):
 #     print("\n", "-" * 80, flush=True, sep="")
 
 
-
-    def _print_received_message(self, message: Union[Dict, str], sender: Agent):
+ 
+    def _print_received_message(self, message: Union[Dict, str], sender: Agent, socket_room_id: Optional[str] = None):
         # print the message received
         # content_to_send = {} #xin add   
         f = io.StringIO()  # xin add # 创建一个 StringIO 对象来捕获输出
         with redirect_stdout(f): # xin add
                 print( sender.name, "(to", f"{self.name}):\n", flush=True)
-        
+                
                 if message.get("role") == "function":
                     func_print = f"***** Response from calling function \"{message['name']}\" *****"
                     print( func_print, flush=True)
@@ -475,6 +477,7 @@ class ConversableAgent(Agent):
                         )
                         print("*" * len(func_print), flush=True)
                 print("\n", "-" * 80, flush=True, sep="")
+        emit('message', {'sender':sender.name,'data':f.getvalue()}, room=socket_room_id)
         self.stored_output += f.getvalue()
         # content_to_send['message'] = f.getvalue()# xin add to send to frontend in realtime
         # websocket.send(json.dumps(content_to_send))# xin add to send to frontend in realtime
@@ -484,7 +487,7 @@ class ConversableAgent(Agent):
         return self.stored_output
 
 
-    def _process_received_message(self, message, sender, silent):
+    def _process_received_message(self, message, sender, silent, socket_room_id: Optional[str] = None):
         message = self._message_to_dict(message)
         # When the agent receives a message, the role of the message is "user". (If 'role' exists and is 'function', it will remain unchanged.)
         valid = self._append_oai_message(message, "user", sender)
@@ -493,7 +496,7 @@ class ConversableAgent(Agent):
                 "Received message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
             )
         if not silent:
-            self._print_received_message(message, sender)
+            self._print_received_message(message, sender, socket_room_id=socket_room_id)
 
     def receive(
         self,
@@ -501,6 +504,7 @@ class ConversableAgent(Agent):
         sender: Agent,
         request_reply: Optional[bool] = None,
         silent: Optional[bool] = False,
+        socket_room_id: Optional[str] = None,
     ):
         """Receive a message from another agent.
 
@@ -524,12 +528,12 @@ class ConversableAgent(Agent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        self._process_received_message(message, sender, silent)
+        self._process_received_message(message, sender, silent, socket_room_id=socket_room_id)
         if request_reply is False or request_reply is None and self.reply_at_receive[sender] is False:
             return
         reply = self.generate_reply(messages=self.chat_messages[sender], sender=sender)
         if reply is not None:
-            self.send(reply, sender, silent=silent)
+            self.send(reply, sender, silent=silent, socket_room_id=socket_room_id)
 
     async def a_receive(
         self,
@@ -580,6 +584,7 @@ class ConversableAgent(Agent):
         recipient: "ConversableAgent",
         clear_history: Optional[bool] = True,
         silent: Optional[bool] = False,
+        socket_room_id: Optional[str] = None,
         **context,
     ):
         """Initiate a chat with the recipient agent.
@@ -596,8 +601,7 @@ class ConversableAgent(Agent):
                 "message" needs to be provided if the `generate_init_message` method is not overridden.
         """
         self._prepare_chat(recipient, clear_history)
-        self.send(self.generate_init_message(**context), recipient, silent=silent)
-
+        self.send(self.generate_init_message(**context), recipient, silent=silent,socket_room_id=socket_room_id)
     async def a_initiate_chat(
         self,
         recipient: "ConversableAgent",
