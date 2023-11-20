@@ -10,7 +10,6 @@ config_list = [
         'model': 'gpt-3.5-turbo-1106',
         'api_key': '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',
     }]
-app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 @app.route('/')
 def index():
