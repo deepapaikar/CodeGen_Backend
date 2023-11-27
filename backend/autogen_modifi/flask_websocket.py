@@ -8,12 +8,12 @@ app = Flask(__name__)
 config_list = [
     {
         'model': 'gpt-3.5-turbo-1106',
-        'api_key': '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',
+        'api_key': '',
     }]
 socketio = SocketIO(app)
 @app.route('/')
 def index():
-    return render_template('websocket_index.html')
+    return render_template('frontend_runchat.html')
 pattern = re.compile(r"You: (.+?)\nAgent: (.+?)(?=You:|$)", re.DOTALL)
 def create_user_proxy_assistant():
     user_proxy = autogen.UserProxyAgent(
