@@ -3,14 +3,17 @@ from flask import Flask, request, render_template
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_login import current_user, login_user, logout_user, login_required
 import autogen, re
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
 config_list = [
     {
         'model': 'gpt-3.5-turbo-1106',
         'api_key': '',
     }]
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*')
 @app.route('/')
 def index():
     return render_template('frontend_runchat.html')
