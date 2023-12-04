@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import List, Optional, Dict, Callable
+from typing import List, Optional, Dict, Callable, Union
 import logging
 import inspect
 from flaml.automl.logger import logger_formatter
 
-from autogen.oai.openai_utils import get_key
+from autogen.oai.openai_utils import get_key, oai_price1k
+from autogen.token_count_utils import count_token
 
 try:
     from openai import OpenAI, APIError
     from openai.types.chat import ChatCompletion
+    from openai.types.chat.chat_completion import ChatCompletionMessage, Choice
     from openai.types.completion import Completion
+    from openai.types.completion_usage import CompletionUsage
     import diskcache
 
     ERROR = None
@@ -126,7 +129,7 @@ class OpenAIWrapper:
         extra_kwargs = {k: v for k, v in config.items() if k in self.extra_kwargs}
         return create_config, extra_kwargs
 
-    def _client(self, config,  openai_config):
+    def _client(self, config, openai_config):
         """Create a client with the given config to overrdie openai_config,
         after removing extra kwargs.
         """
@@ -223,8 +226,10 @@ class OpenAIWrapper:
             cache_seed = extra_kwargs.get("cache_seed", 41)
             filter_func = extra_kwargs.get("filter_func")
             context = extra_kwargs.get("context")
-            with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
-                if cache_seed is not None:
+
+            # Try to load the response from cache
+            if cache_seed is not None:
+                with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
                     # Try to get the response from cache
                     key = get_key(params)
                     response = cache.get(key, None)
@@ -235,20 +240,107 @@ class OpenAIWrapper:
                             # Return the response if it passes the filter or it is the last client
                             response.config_id = i
                             response.pass_filter = pass_filter
-                            # TODO: add response.cost
+                            response.cost = self.cost(response)
                             return response
-                completions = client.chat.completions if "messages" in params else client.completions
-                try:
-                    response = completions.create(**params)
-                except APIError:
-                    logger.debug(f"config {i} failed", exc_info=1)
-                    if i == last:
-                        raise
-                else:
-                    if cache_seed is not None:
-                        # Cache the response
+                        continue  # filter is not passed; try the next config
+            try:
+                response = self._completions_create(client, params)
+            except APIError:
+                logger.debug(f"config {i} failed", exc_info=1)
+                if i == last:
+                    raise
+            else:
+                if cache_seed is not None:
+                    # Cache the response
+                    with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
                         cache.set(key, response)
+
+                # check the filter
+                pass_filter = filter_func is None or filter_func(context=context, response=response)
+                if pass_filter or i == last:
+                    # Return the response if it passes the filter or it is the last client
+                    response.config_id = i
+                    response.pass_filter = pass_filter
+                    response.cost = self.cost(response)
                     return response
+                continue  # filter is not passed; try the next config
+
+    def cost(self, response: Union[ChatCompletion, Completion]) -> float:
+        """Calculate the cost of the response."""
+        model = response.model
+        if model not in oai_price1k:
+            # TODO: add logging to warn that the model is not found
+            return 0
+
+        n_input_tokens = response.usage.prompt_tokens
+        n_output_tokens = response.usage.completion_tokens
+        tmp_price1K = oai_price1k[model]
+        # First value is input token rate, second value is output token rate
+        if isinstance(tmp_price1K, tuple):
+            return (tmp_price1K[0] * n_input_tokens + tmp_price1K[1] * n_output_tokens) / 1000
+        return tmp_price1K * (n_input_tokens + n_output_tokens) / 1000
+
+    def _completions_create(self, client, params):
+        completions = client.chat.completions if "messages" in params else client.completions
+        # If streaming is enabled, has messages, and does not have functions, then
+        # iterate over the chunks of the response
+        if params.get("stream", False) and "messages" in params and "functions" not in params:
+            response_contents = [""] * params.get("n", 1)
+            finish_reasons = [""] * params.get("n", 1)
+            completion_tokens = 0
+
+            # Set the terminal text color to green
+            print("\033[32m", end="")
+
+            # Send the chat completion request to OpenAI's API and process the response in chunks
+            for chunk in completions.create(**params):
+                if chunk.choices:
+                    for choice in chunk.choices:
+                        content = choice.delta.content
+                        finish_reasons[choice.index] = choice.finish_reason
+                        # If content is present, print it to the terminal and update response variables
+                        if content is not None:
+                            print(content, end="", flush=True)
+                            response_contents[choice.index] += content
+                            completion_tokens += 1
+                        else:
+                            print()
+
+            # Reset the terminal text color
+            print("\033[0m\n")
+
+            # Prepare the final ChatCompletion object based on the accumulated data
+            model = chunk.model.replace("gpt-35", "gpt-3.5")  # hack for Azure API
+            prompt_tokens = count_token(params["messages"], model)
+            response = ChatCompletion(
+                id=chunk.id,
+                model=chunk.model,
+                created=chunk.created,
+                object="chat.completion",
+                choices=[],
+                usage=CompletionUsage(
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=prompt_tokens + completion_tokens,
+                ),
+            )
+            for i in range(len(response_contents)):
+                response.choices.append(
+                    Choice(
+                        index=i,
+                        finish_reason=finish_reasons[i],
+                        message=ChatCompletionMessage(
+                            role="assistant", content=response_contents[i], function_call=None
+                        ),
+                    )
+                )
+        else:
+            # If streaming is not enabled or using functions, send a regular chat completion request
+            # Functions are not supported, so ensure streaming is disabled
+            params = params.copy()
+            params["stream"] = False
+            response = completions.create(**params)
+        return response
 
     @classmethod
     def extract_text_or_function_call(cls, response: ChatCompletion | Completion) -> List[str]:

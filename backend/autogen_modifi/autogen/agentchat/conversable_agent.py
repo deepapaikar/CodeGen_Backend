@@ -407,13 +407,12 @@ class ConversableAgent(Agent):
         # print the message received
         print(colored(sender.name, "yellow"), "(to", f"{self.name}):\n", flush=True)
         message = self._message_to_dict(message)
-        res = ''
+
         if message.get("role") == "function":
             func_print = f"***** Response from calling function \"{message['name']}\" *****"
             print(colored(func_print, "green"), flush=True)
             print(message["content"], flush=True)
             print(colored("*" * len(func_print), "green"), flush=True)
-            res+=func_print+'\n'+message["content"]+'\n'+'*' * len(func_print)+'\n'
         else:
             content = message.get("content")
             if content is not None:
@@ -424,7 +423,6 @@ class ConversableAgent(Agent):
                         self.llm_config and self.llm_config.get("allow_format_str_template", False),
                     )
                 print(content_str(content), flush=True)
-                res+=content_str(content)+'\n'
             if "function_call" in message:
                 function_call = dict(message["function_call"])
                 func_print = (
@@ -438,9 +436,8 @@ class ConversableAgent(Agent):
                     sep="",
                 )
                 print(colored("*" * len(func_print), "green"), flush=True)
-                res+=func_print+'\n'+"Arguments: \n"+function_call.get("arguments", "(No arguments found)")+'\n'+'*' * len(func_print)+'\n'
         if self.socket_room_id is not None:
-            emit('message', {'sender':sender.name,'data':res}, room=self.socket_room_id)
+            emit('message', {'sender':sender.name,'data':message}, room=self.socket_room_id)
         print("\n", "-" * 80, flush=True, sep="")
 
     def _process_received_message(self, message: Union[Dict, str], sender: Agent, silent: bool):
