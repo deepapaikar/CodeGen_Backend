@@ -11,7 +11,7 @@ CORS(app, supports_credentials=True)
 config_list = [
     {
         'model': 'gpt-3.5-turbo-1106',
-        'api_key': '',
+        'api_key': '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',
     }]
 socketio = SocketIO(app, cors_allowed_origins='*')
 @app.route('/')
@@ -28,6 +28,7 @@ def create_user_proxy_assistant():
             "work_dir": "coding",
             "use_docker": False,  # set to True or image name like "python:3" to use docker
         },
+        socket_room_id = request.sid
     )
     assistant = autogen.AssistantAgent(
         name="assistant",
@@ -36,13 +37,14 @@ def create_user_proxy_assistant():
             "config_list": config_list,  # a list of OpenAI API configurations
             "temperature": 0,  # temperature for sampling
         },  # configuration for autogen's enhanced inference API which is compatible with OpenAI API
+        socket_room_id = request.sid
     )
     return user_proxy, assistant
 user_proxys = {}
 assistants = {}
 @socketio.on('connect')
 def handle_connect():
-    join_room(request.sid)  
+    join_room(request.sid)
     user_proxys[request.sid], assistants[request.sid] = create_user_proxy_assistant()
     print('connect', request.sid)
 @socketio.on('message')
