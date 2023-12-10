@@ -4,49 +4,47 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_login import current_user, login_user, logout_user, login_required
 import autogen, re
 from flask_cors import CORS
+from. import groupchat_flask
+from groupchat_flask import groupchat_a
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
+# ---------------- gpt config
+# The default config list in notebook.
 config_list = [
     {
-        'model': 'gpt-3.5-turbo-1106',
-        'api_key': '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',
+        'model': 'gpt-4-1106-preview',
+        'api_key': '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',
+        # "model": "mistral-7b",
+        # "base_url": "http://localhost:1234/v1",
+        # # "api_type": "openai",
+        # "api_key": "",
     }]
+
+config_list_gpt4 = {
+    "cache_seed": 42,  # change the cache_seed for different trials
+    "temperature": 0,
+    "config_list": config_list,
+    "timeout": 120,
+}
+
 socketio = SocketIO(app, cors_allowed_origins='*')
 @app.route('/')
 def index():
     return render_template('frontend_runchat.html')
+
 pattern = re.compile(r"You: (.+?)\nAgent: (.+?)(?=You:|$)", re.DOTALL)
-def create_user_proxy_assistant():
-    user_proxy = autogen.UserProxyAgent(
-        name="user_proxy",
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=10,
-        is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
-        code_execution_config={
-            "work_dir": "coding",
-            "use_docker": False,  # set to True or image name like "python:3" to use docker
-        },
-        socket_room_id = request.sid
-    )
-    assistant = autogen.AssistantAgent(
-        name="assistant",
-        llm_config={
-            "cache_seed": 42,  # seed for caching and reproducibility
-            "config_list": config_list,  # a list of OpenAI API configurations
-            "temperature": 0,  # temperature for sampling
-        },  # configuration for autogen's enhanced inference API which is compatible with OpenAI API
-        socket_room_id = request.sid
-    )
-    return user_proxy, assistant
+
 user_proxys = {}
 assistants = {}
+
 @socketio.on('connect')
 def handle_connect():
     join_room(request.sid)
-    user_proxys[request.sid], assistants[request.sid] = create_user_proxy_assistant()
+    user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4)
     print('connect', request.sid)
+
 @socketio.on('message')
 def handle_message(message):
     print('receive message', message)
@@ -60,5 +58,6 @@ def handle_message(message):
         dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
     except Exception as e:
         response = {"error": str(e)}
+
 if __name__ == '__main__':
     socketio.run(app, debug=True,port=5002)
