@@ -8,7 +8,7 @@ app = Flask(__name__)
 config_list = [
     {
         'model': 'gpt-3.5-turbo-1106',
-        'api_key': '',
+        'api_key': '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',
     }]
 socketio = SocketIO(app)
 @app.route('/')
