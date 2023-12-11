@@ -1,10 +1,11 @@
+import sys
+sys.path.append('/home/xin/semantic_SEARCH/autogen/autogen_fix_websocket/CodeGen_Backend/backend/autogen_modifi')
 # app.py
 from flask import Flask, request, render_template
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_login import current_user, login_user, logout_user, login_required
 import autogen, re
 from flask_cors import CORS
-from. import groupchat_flask
 from groupchat_flask import groupchat_a
 
 app = Flask(__name__)
@@ -15,7 +16,7 @@ CORS(app, supports_credentials=True)
 config_list = [
     {
         'model': 'gpt-4-1106-preview',
-        'api_key': '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',
+        'api_key': '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',
         # "model": "mistral-7b",
         # "base_url": "http://localhost:1234/v1",
         # # "api_type": "openai",
@@ -42,7 +43,7 @@ assistants = {}
 @socketio.on('connect')
 def handle_connect():
     join_room(request.sid)
-    user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4)
+    user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid)
     print('connect', request.sid)
 
 @socketio.on('message')
@@ -51,8 +52,8 @@ def handle_message(message):
     try:
         user_input = message.get('content')
         user_proxy = user_proxys[request.sid]
-        user_proxy.initiate_chat(assistants[request.sid], message=user_input,socket_room_id=request.sid)
-        
+        user_proxy.initiate_chat(assistants[request.sid], message=user_input)
+        print(assistants[request.sid].groupchat.messages)
         dialogue = user_proxy.get_stored_output()  # save dialogue for differenet user in dialogue
         matches = pattern.findall(dialogue)
         dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
