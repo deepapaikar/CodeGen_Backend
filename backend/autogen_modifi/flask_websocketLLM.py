@@ -15,10 +15,8 @@ CORS(app, supports_credentials=True)
 # The default config list in notebook.
 config_list = [
     {
-        'model': 'gpt-4-1106-preview',
-        'api_key': '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',
-        # "model": "mistral-7b",
-        # "base_url": "http://localhost:1234/v1",
+        "model": "mistral-7b",
+        "base_url": "https://trout-bloggers-sporting-fbi.trycloudflare.com/v1"
         # # "api_type": "openai",
         # "api_key": "",
     }]
@@ -27,7 +25,7 @@ config_list_gpt4 = {
     "cache_seed": 42,  # change the cache_seed for different trials
     "temperature": 0,
     "config_list": config_list,
-    "timeout": 120,
+    "timeout": 120,s
 }
 
 socketio = SocketIO(app, cors_allowed_origins='*')
