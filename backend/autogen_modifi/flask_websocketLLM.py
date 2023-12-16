@@ -25,7 +25,7 @@ config_list_gpt4 = {
     "cache_seed": 42,  # change the cache_seed for different trials
     "temperature": 0,
     "config_list": config_list,
-    "timeout": 120,s
+    "timeout": 120,
 }
 
 socketio = SocketIO(app, cors_allowed_origins='*')
