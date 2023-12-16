@@ -17,8 +17,7 @@ config_list = [
     {
         "model": "mistral-7b",
         "base_url": "https://trout-bloggers-sporting-fbi.trycloudflare.com/v1"
-        # # "api_type": "openai",
-        # "api_key": "",
+
     }]
 
 config_list_gpt4 = {
@@ -43,6 +42,16 @@ def handle_connect():
     join_room(request.sid)
     user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid)
     print('connect', request.sid)
+
+# SocketIO event for updating LLM base URL
+@socketio.on('update_LLM_base_url')
+def handle_update_LLM_baseUrl(message):
+    new_base_url = message['base_url']
+    # Here we update the first configuration's API key
+    config_list[0]['base_url'] = new_base_url
+    print('LLM base url updated:', config_list[0]['base_url'])
+    # Add any other logic you need after updating the key
+
 
 @socketio.on('message')
 def handle_message(message):
