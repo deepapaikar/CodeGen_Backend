@@ -17,7 +17,7 @@ config_list = [
     {
         "model": "mistral-7b",
         "base_url": "https://trout-bloggers-sporting-fbi.trycloudflare.com/v1",
-        'api_key': ""
+        'api_key': "NULL"
 
     }]
 
