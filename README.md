@@ -3,7 +3,7 @@ Autogen+ Local LLM implemented with React.js and Flask
 
 ## Local LLM
 
-1. Open the LocalLLM_Mistral7B python notebook in Colab with free T4 GPU
+1. Open the Mistral7B python notebook in Colab with free T4 GPU
 2. Execute the cell by clicking "Run all"
 3. Based on your internet connectivity, in a couple of minutes you will have the Cloudflare link that can be used to interact with the AutoGen 
 
