@@ -17,14 +17,7 @@ config_list = [
     {   
         #-----gpt----------
         'model': 'gpt-4-1106-preview',
-        # 'model': 'gpt-3.5-turbo',
-        'api_key': '',
-
-        #-----mistral-7b---
-        # "model": "mistral-7b",
-        # "base_url": "http://127.0.0.1:7860",
-        # # "api_type": "openai",
-        # "api_key": "",
+        'api_key': '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',
     }]
 
 config_list_gpt4 = {
@@ -49,6 +42,16 @@ def handle_connect():
     join_room(request.sid)
     user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid)
     print('connect', request.sid)
+
+# SocketIO event for updating API key
+@socketio.on('update_api_key')
+def handle_update_api_key(message):
+    new_api_key = message['api_key']
+    # Here we update the first configuration's API key
+    config_list[0]['api_key'] = new_api_key
+    print('API Key updated:', config_list[0]['api_key'])
+    # Add any other logic you need after updating the key
+
 
 @socketio.on('message')
 def handle_message(message):
