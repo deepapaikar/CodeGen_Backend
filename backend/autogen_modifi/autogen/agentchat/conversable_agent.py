@@ -10,6 +10,15 @@ from autogen.code_utils import DEFAULT_MODEL, UNKNOWN, content_str, execute_code
 from flask_socketio import emit
 from .agent import Agent
 
+from autogen.code_utils import (
+    DEFAULT_MODEL,
+    UNKNOWN,
+    execute_code,
+    extract_code,
+    save_code,
+    infer_lang,
+)
+
 try:
     from termcolor import colored
 except ImportError:
@@ -52,6 +61,7 @@ class ConversableAgent(Agent):
         human_input_mode: Optional[str] = "TERMINATE",
         function_map: Optional[Dict[str, Callable]] = None,
         code_execution_config: Optional[Union[Dict, Literal[False]]] = None,
+        code_save_config: Optional[Union[Dict, bool]] = None,
         llm_config: Optional[Union[Dict, Literal[False]]] = None,
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
         socket_room_id: Optional[str] = None,
@@ -121,6 +131,7 @@ class ConversableAgent(Agent):
         self._code_execution_config: Union[Dict, Literal[False]] = (
             {} if code_execution_config is None else code_execution_config
         )
+        self._code_save_config = {} if code_save_config is None else code_save_config
         self.human_input_mode = human_input_mode
         self._max_consecutive_auto_reply = (
             max_consecutive_auto_reply if max_consecutive_auto_reply is not None else self.MAX_CONSECUTIVE_AUTO_REPLY
@@ -677,6 +688,10 @@ class ConversableAgent(Agent):
             exitcode, logs = self.execute_code_blocks(code_blocks)
             code_execution_config["last_n_messages"] = last_n_messages
             exitcode2str = "execution succeeded" if exitcode == 0 else "execution failed"
+
+            if exitcode == 0:
+                # save the code
+                self.save_code_repo(code_blocks)
             return True, f"exitcode: {exitcode} ({exitcode2str})\nCode output: {logs}"
 
         # no code blocks are found, push last_n_messages back and return.
@@ -1063,6 +1078,46 @@ class ConversableAgent(Agent):
         """
         reply = input(prompt)
         return reply
+
+    def save_code_local(self,code, **kwargs):
+        return save_code(code, **kwargs)
+    
+    def save_code_repo(self,code_blocks):
+        """Save the code to local.
+
+        Override this function to modify the way to save the code.
+        Args:
+            save_code (str): the code to be saved.
+        """
+        for i, code_block in enumerate(code_blocks):
+            #1. language should be python
+            #2. code
+            lang, code = code_block
+            if not lang:
+                lang = infer_lang(code)
+
+            #3. filename
+            #4. work_dir
+            #5. save_code
+            if lang in ["python", "Python"]:                
+                if code.startswith("# filename: "):
+                    #start from the 11th character
+                    filename = code[11 : code.find("\n")].strip()
+                else:
+                    filename = None
+                self.save_code_local(
+                    code,
+                    lang="python",
+                    filename=filename,
+                    **self._code_save_config,
+                )
+                print(
+                colored(
+                    f"\n>>>>>>>> SAVE CODE BLOCK TO CODE_REPO{i} (inferred language is {lang})...",
+                    "blue",
+                ),
+                flush=True,
+                )
 
     def run_code(self, code, **kwargs):
         """Run the code and return the result.

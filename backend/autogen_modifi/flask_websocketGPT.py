@@ -14,11 +14,15 @@ CORS(app, supports_credentials=True)
 # ---------------- gpt config
 # The default config list in notebook.
 config_list = [
-    {
+    {   
+        #-----gpt----------
         'model': 'gpt-4-1106-preview',
-        'api_key': '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',
+        # 'model': 'gpt-3.5-turbo',
+        'api_key': '',
+
+        #-----mistral-7b---
         # "model": "mistral-7b",
-        # "base_url": "http://localhost:1234/v1",
+        # "base_url": "http://127.0.0.1:7860",
         # # "api_type": "openai",
         # "api_key": "",
     }]
@@ -61,4 +65,4 @@ def handle_message(message):
         response = {"error": str(e)}
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True,port=5002)
+    socketio.run(app, debug=True,port=5003)

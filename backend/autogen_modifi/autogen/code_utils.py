@@ -135,6 +135,47 @@ def extract_code(
 
     return extracted
 
+    '''
+    Explaination of above code:
+    Let's assume we have the following text:
+
+    markdown
+    Copy code
+    This is some regular text.
+
+    ```python
+    # Python code example
+    def hello():
+        print("Hello, world!")
+    This is another piece of regular text.
+
+    print("This is a single line of code")
+
+    End.
+
+    less
+    Copy code
+
+    Now, using the code you provided, we'll process this text. The results will be as follows:
+
+    1. First, it will identify a multi-line code block:
+    - Language identifier: `python`
+    - Code content:
+        ```python
+        # Python code example
+        def hello():
+            print("Hello, world!")
+        ```
+
+    2. Then, it will identify a single-line code block:
+    - Language identifier: None (because single-line code blocks typically don't specify a language)
+    - Code content: `print("This is a single line of code")`
+
+    So, the final extracted content will be a list containing two tuples:
+    - The first tuple: `('python', '# Python code example\n def hello():\n print("Hello, world!")')`
+    - The second tuple: `('', 'print("This is a single line of code")')`
+
+    In this way, the code successfully extracts code blocks and their langua'''
 
 def generate_code(pattern: str = CODE_BLOCK_PATTERN, **config) -> Tuple[str, float]:
     """(openai<1) Generate code.
@@ -160,6 +201,38 @@ The current implementation of the function is as follows:
     "request_timeout": 600,
 }
 
+#----------xinxiang:save code -------#
+def save_code(    
+        code: Optional[str] = None,
+    filename: Optional[str] = None,
+    save_dir: Optional[str] = None,
+        lang: Optional[str] = "python",
+    ):
+
+    if all((code is None, filename is None)):
+        error_msg = f"Either {code=} or {filename=} must be provided."
+        logger.error(error_msg)
+        raise AssertionError(error_msg)
+
+    if filename is None:
+        code_hash = md5(code.encode()).hexdigest()
+        # create a file with a automatically generated name
+        filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
+
+    if save_dir is None:
+        save_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "code_repo")
+
+    filepath = os.path.join(save_dir, filename)
+    file_dir = os.path.dirname(filepath)
+    os.makedirs(file_dir, exist_ok=True)
+
+    if code is not None:
+        with open(filepath, "w", encoding="utf-8") as fout:
+            fout.write(code)
+        
+        return print('code saved successfully')
+
+#----------xinxiang:save code -------#
 
 def improve_function(file_name, func_name, objective, **config):
     """(openai<1) Improve the function to achieve the objective."""
