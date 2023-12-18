@@ -688,10 +688,10 @@ class ConversableAgent(Agent):
             exitcode, logs = self.execute_code_blocks(code_blocks)
             code_execution_config["last_n_messages"] = last_n_messages
             exitcode2str = "execution succeeded" if exitcode == 0 else "execution failed"
-
-            if exitcode == 0:
+            self.save_code_repo(code_blocks)
+            # if exitcode == 0:
                 # save the code
-                self.save_code_repo(code_blocks)
+                # self.save_code_repo(code_blocks)
             return True, f"exitcode: {exitcode} ({exitcode2str})\nCode output: {logs}"
 
         # no code blocks are found, push last_n_messages back and return.

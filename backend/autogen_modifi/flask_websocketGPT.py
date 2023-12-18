@@ -9,6 +9,7 @@ from groupchat_flask import groupchat_a
 import base64
 import os
 from openai import OpenAI
+import mimetypes
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -20,12 +21,16 @@ if not os.path.exists(temp_dir):
     
 # ---------------- gpt config
 # The default config list in notebook.
-config_list = [
-    {
-        #-----gpt----------
-        'model': 'gpt-4-1106-preview',
-        'api_key': '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',
-    }]
+# config_list = [
+#     {
+#         #-----gpt----------
+#         'model': 'gpt-4-1106-preview',
+#         'api_key': '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',
+#     }]
+config_list = [{
+    "model": "gpt-4-1106-preview",
+    "api_key":"",
+}]
 # ---------------- check api key
 def check_openai_api_key(api_key):
     client = OpenAI(
@@ -39,7 +44,7 @@ def check_openai_api_key(api_key):
                     "content": "Say this is a test",
                 }
             ],
-            model="gpt-3.5-turbo",
+            model="gpt-4",
         )
         res = True
     except Exception as e:
@@ -47,8 +52,8 @@ def check_openai_api_key(api_key):
         res = False
     return res
 check_result = check_openai_api_key(config_list[0]['api_key'])
-if not check_result:
-    raise Exception("Please set OPENAI_API_KEY environment variable to a valid API key.")
+# if not check_result:
+#     raise Exception("Please set OPENAI_API_KEY environment variable to a valid API key.")
 
 config_list_gpt4 = {
     "cache_seed": 42,  # change the cache_seed for different trials
@@ -81,11 +86,46 @@ def handle_file_upload(json):
     user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid,doc_path=file_dict[request.sid])
     print('agent created')
     return 'File uploaded successfully'
-@socketio.on('connect')
 
+@socketio.on('connect')
 def handle_connect():
     join_room(request.sid)
     user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid)
+    file_path = './flask_React.py'
+    with open(file_path, 'rb') as file:
+        file_data = file.read()
+        encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
+
+        # Optionally, get the MIME type of the file
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if not mime_type:
+            mime_type = 'application/octet-stream'  # Default MIME type if unknown
+
+        # Create a dictionary to hold the file data and additional info
+        file_info = {
+            'fileData': encoded_data,
+            'fileName': file_path.split('/')[-1],  # Extract the file name
+            'mimeType': mime_type
+        }
+
+        emit('file_received', file_info, room=request.sid)
+    with open(file_path, 'rb') as file:
+        file_data = file.read()
+        encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
+
+        # Optionally, get the MIME type of the file
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if not mime_type:
+            mime_type = 'application/octet-stream'  # Default MIME type if unknown
+
+        # Create a dictionary to hold the file data and additional info
+        file_info = {
+            'fileData': encoded_data,
+            'fileName': file_path.split('/')[-1],  # Extract the file name
+            'mimeType': mime_type
+        }
+
+        emit('file_received', file_info, room=request.sid)
     print('connect', request.sid)
 
 # SocketIO event for updating API key

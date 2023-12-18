@@ -10,7 +10,8 @@ from hashlib import md5
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from flask_socketio import emit
 from autogen import oai
-
+import base64
+import mimetypes
 try:
     import docker
 except ImportError:
@@ -233,7 +234,21 @@ def save_code(
         if socket_room_id is not None:
             with open(filepath, 'rb') as file:
                 file_data = file.read()
-                emit('file_response', file_data)
+                encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
+
+                # Optionally, get the MIME type of the file
+                mime_type, _ = mimetypes.guess_type(filepath)
+                if not mime_type:
+                    mime_type = 'application/octet-stream'  # Default MIME type if unknown
+
+                # Create a dictionary to hold the file data and additional info
+                file_info = {
+                    'fileData': encoded_data,
+                    'fileName': filepath.split('/')[-1],  # Extract the file name
+                    'mimeType': mime_type
+                }
+
+                emit('file_received', file_info, room=socket_room_id)
         return print('code saved successfully')
 
 #----------xinxiang:save code -------#

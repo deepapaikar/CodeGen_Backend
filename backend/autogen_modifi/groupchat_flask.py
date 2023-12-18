@@ -146,7 +146,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
         agent_list = [user_proxy, code_generator, plan_excutor, planner, code_proxy, critic, answer_A, image_agent,Content_Assistant,document_answer]
     
     
-    groupchat = GroupChat(agents=agent_list, messages=[], max_round=10)
+    groupchat = GroupChat(agents=agent_list, messages=[], max_round=30)
     
     manager = autogen.GroupChatManager(groupchat=groupchat, 
                                        llm_config=config_list_gpt4,
