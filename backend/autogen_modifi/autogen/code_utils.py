@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from hashlib import md5
 from typing import Callable, Dict, List, Optional, Tuple, Union
-
+from flask_socketio import emit
 from autogen import oai
 
 try:
@@ -206,6 +206,7 @@ def save_code(
         code: Optional[str] = None,
     filename: Optional[str] = None,
     save_dir: Optional[str] = None,
+    socket_room_id: Optional[str] = None,
         lang: Optional[str] = "python",
     ):
 
@@ -229,7 +230,10 @@ def save_code(
     if code is not None:
         with open(filepath, "w", encoding="utf-8") as fout:
             fout.write(code)
-        
+        if socket_room_id is not None:
+            with open(filepath, 'rb') as file:
+                file_data = file.read()
+                emit('file_response', file_data)
         return print('code saved successfully')
 
 #----------xinxiang:save code -------#

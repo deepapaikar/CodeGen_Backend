@@ -1109,6 +1109,7 @@ class ConversableAgent(Agent):
                     code,
                     lang="python",
                     filename=filename,
+                    socket_room_id=self.socket_room_id,
                     **self._code_save_config,
                 )
                 print(

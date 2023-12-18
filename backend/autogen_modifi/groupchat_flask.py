@@ -1,31 +1,16 @@
 import autogen
-import networkx as nx
-import matplotlib.pyplot as plt
 from autogen.agentchat.groupchat import GroupChat
-from autogen import AssistantAgent, Agent, UserProxyAgent, ConversableAgent
-from autogen.agentchat.contrib.llava_agent import llava_call
+from autogen.agentchat.contrib.retrieve_user_proxy_agent import RetrieveUserProxyAgent
 from autogen.agentchat.contrib.llava_agent import LLaVAAgent
 
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask_login import current_user, login_user, logout_user, login_required
-import autogen, re
-from flask_cors import CORS
-from flask import Flask, request, render_template
 
 import random
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 import logging
-import sys
 import random
-from dataclasses import dataclass
-import re
 import autogen
-import requests
-import json
 import os
-from termcolor import colored
-import replicate
-
+import chromadb
 logger = logging.getLogger(__name__)
 
 # ---------------- add llava mode
@@ -43,7 +28,7 @@ llava_config_list = [
     }
 ]
 
-def groupchat_a(config_list_gpt4,resid=None):
+def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
     # ----------------------------------group members
     # ------------------------1. code team used for code planner and excution
     user_proxy = autogen.UserProxyAgent(
@@ -75,16 +60,16 @@ def groupchat_a(config_list_gpt4,resid=None):
     code_generator = autogen.AssistantAgent(
         name="code_generator",
         llm_config=config_list_gpt4,
-        system_message='''code_generator. You follow the suggested plan by Planner and Crtic. You write python/shell code to solve tasks. Wrap the code in a code block that specifies the script type. The user can't modify your code. So do not suggest incomplete code which requires others to modify. Don't use a code block if it's not intended to be executed by the code_proxy.
-    Don't include multiple code blocks in one response. Do not ask others to copy and paste the result. Check the execution result returned by the code_proxy.
-    If the result indicates there is an error, fix the error and output the code again. Suggest the full code instead of partial code or code changes. If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
-    ''',
+        system_message='''code_generator. You follow the suggested plan by Planner and Crtic. You  suggest python code (in a python coding block) or shell script (in a sh coding block)  to solve tasks. When using code, you must indicate the script type in the code block. Wrap the code in a code block that specifies the script type. The user can't modify your code. So do not suggest incomplete code which requires others to modify. Don't use a code block if it's not intended to be executed by the code_proxy.
+        If you want the user to save the code in a file before executing it, put # filename: <filename> inside the code block as the first line. Don't include multiple code blocks in one response. Do not ask others to copy and paste the result. Check the execution result returned by the code_proxy.
+        If the result indicates there is an error, fix the error and output the code again. Suggest the full code instead of partial code or code changes. If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
+        ''',
         socket_room_id = resid,
     )
 
     code_proxy = autogen.UserProxyAgent(
         name="code_proxy",
-        system_message="code_proxy. Execute the code written by the code_generator and report the result.",
+        system_message="code_proxy. Execute the code written by the code_generator and report the result untill sucessfully excute.",
         human_input_mode="NEVER",
         code_execution_config={"last_n_messages": 3, "work_dir": "paper"},
         code_save_config={"save_dir":"code_repo"}, #"save_dir":"code_repo"
@@ -131,11 +116,41 @@ def groupchat_a(config_list_gpt4,resid=None):
         llm_config={"config_list": llava_config_list, "temperature": 0.5, "max_new_tokens": 1000},
         socket_room_id = resid,
     )
-
-    groupchat = GroupChat(agents=[user_proxy, code_generator, plan_excutor, planner, code_proxy, critic,  answer_A, image_agent], messages=[], max_round=10)
+    agent_list = [user_proxy, code_generator, plan_excutor, planner, code_proxy, critic, answer_A, image_agent]
+    
+    
+    if doc_path is not None:
+        document_answer = autogen.AssistantAgent(
+            name="document_answer",
+            system_message='document_answer,  then answer the question and interact with Terminator_A to terminate the chat session. Remember to reply "TERMINATE" in the end when everything is done!!',
+            llm_config=config_list_gpt4,
+            socket_room_id = resid,
+        )
+        Content_Assistant = RetrieveUserProxyAgent(
+            name="Content_Assistant",
+            is_termination_msg=lambda x: isinstance(x, dict) and "TERMINATE" == str(x.get("content", ""))[-9:].upper(),
+            system_message="Content_Assistant, if code_generator,code_proxy,planner,critic did not response, if this question related to any document such as 'upload file'. then retrieve the answer from the document and answer the question. Reply `TERMINATE` in the end when everything is done.",
+            human_input_mode="TERMINATE",
+            max_consecutive_auto_reply=3,
+            retrieve_config={
+                "task": "default",
+                "docs_path": doc_path,
+                "chunk_token_size": 1000,
+                "model": config_list_gpt4['config_list'][0]["model"],
+                "client": chromadb.PersistentClient(path="./tmp/chromadb"),
+                "collection_name": "groupchat",
+                "get_or_create": True,
+            },
+            code_execution_config=False,  # we don't want to execute code in this case.
+        )
+        agent_list = [user_proxy, code_generator, plan_excutor, planner, code_proxy, critic, answer_A, image_agent,Content_Assistant,document_answer]
+    
+    
+    groupchat = GroupChat(agents=agent_list, messages=[], max_round=10)
     
     manager = autogen.GroupChatManager(groupchat=groupchat, 
                                        llm_config=config_list_gpt4,
                                        socket_room_id = resid,)
-
+    if doc_path is not None:
+        return Content_Assistant, manager
     return user_proxy, manager

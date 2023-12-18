@@ -23,7 +23,20 @@ install_requires = [
     "flask",
     "flask_socketio",
     "flask_login",
-    "websockets"
+    "websockets",
+    "flask_cors",
+    "requests",
+    "networkx",
+    "matplotlib",
+    "pyyaml",
+    "pandas",
+    "numpy",
+    "chromadb==0.4.14",
+    "pypdf",
+    "sentence_transformers",
+    "IPython",
+    "replicate",
+    "pydantic==1.10.9",
 ]
 
 setuptools.setup(
