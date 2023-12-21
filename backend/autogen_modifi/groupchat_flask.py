@@ -2,7 +2,7 @@ import autogen
 from autogen.agentchat.groupchat import GroupChat
 from autogen.agentchat.contrib.retrieve_user_proxy_agent import RetrieveUserProxyAgent
 from autogen.agentchat.contrib.llava_agent import LLaVAAgent
-
+import time
 
 import random
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 LLAVA_MODE = "remote" # Either "local" or "remote"
 assert LLAVA_MODE in ["local", "remote"]
 
-os.environ["REPLICATE_API_TOKEN"] = "r8_JDmEHu1VGuJqwyKZ9QqBvIn5NTvIebm0nxxuH"
+os.environ["REPLICATE_API_TOKEN"] = "r8_QsuGeWppFVOgAjLdWzd4qMWKbff32Zs2C7BJJ"
     
 llava_config_list = [
     {
@@ -137,7 +137,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
                 "docs_path": doc_path,
                 "chunk_token_size": 1000,
                 "model": config_list_gpt4['config_list'][0]["model"],
-                "client": chromadb.PersistentClient(path="./tmp/chromadb"),
+                "client": chromadb.PersistentClient(path="./tmp/chromadb/"+doc_path+str(time.time())),
                 "collection_name": "groupchat",
                 "get_or_create": True,
             },

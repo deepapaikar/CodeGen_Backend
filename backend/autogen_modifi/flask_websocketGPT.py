@@ -166,23 +166,23 @@ def handle_connect():
     file_path = './flask_React.py'
 
 
-    with open(file_path, 'rb') as file:
-        file_data = file.read()
-        encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
+    # with open(file_path, 'rb') as file:
+    #     file_data = file.read()
+    #     encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
 
-        # Optionally, get the MIME type of the file
-        mime_type, _ = mimetypes.guess_type(file_path)
-        if not mime_type:
-            mime_type = 'application/octet-stream'  # Default MIME type if unknown
+    #     # Optionally, get the MIME type of the file
+    #     mime_type, _ = mimetypes.guess_type(file_path)
+    #     if not mime_type:
+    #         mime_type = 'application/octet-stream'  # Default MIME type if unknown
 
-        # Create a dictionary to hold the file data and additional info
-        file_info = {
-            'fileData': encoded_data,
-            'fileName': file_path.split('/')[-1],  # Extract the file name
-            'mimeType': mime_type
-        }
+    #     # Create a dictionary to hold the file data and additional info
+    #     file_info = {
+    #         'fileData': encoded_data,
+    #         'fileName': file_path.split('/')[-1],  # Extract the file name
+    #         'mimeType': mime_type
+    #     }
 
-        emit('file_received', file_info, room=request.sid)
+    #     emit('file_received', file_info, room=request.sid)
     print('connect', request.sid)
 
 
@@ -190,22 +190,18 @@ def handle_connect():
 @socketio.on('message')
 def handle_message(message):
     print('receive message', message)
-    try:
-        user_input = message.get('content')
-        user_proxy = user_proxys[request.sid]
-        # ----xin add
-        if user_proxy.name == "Content_Assistant":
-            user_proxy.initiate_chat(assistants[request.sid], problem=user_input,clear_history=False)
-        else:
-            user_proxy.initiate_chat(assistants[request.sid], message=user_input, clear_history=False)
+    user_input = message.get('content')
+    user_proxy = user_proxys[request.sid]
+    # ----xin add
+    if user_proxy.name == "Content_Assistant":
+        user_proxy.initiate_chat(assistants[request.sid], problem=user_input,clear_history=False)
+    else:
+        user_proxy.initiate_chat(assistants[request.sid], message=user_input, clear_history=False)
         # ----xin add
           # save dialogue for differenet user in dialogue
         # matches = pattern.findall(dialogue)
         # dialogue = [{"you": match[0], "agent": match[1]} for match in matches]
-    except Exception as e:
-        response = {"error": str(e)}
-        print(response)
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False,port=5003)
+    socketio.run(app, debug=True,port=5003)
