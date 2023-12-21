@@ -42,7 +42,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
 
     planner = autogen.AssistantAgent(
         name="Planner",
-        system_message='''Planner. Suggest a plan and interact with ctitic to confirm this plan. Then give the plan to code_generator and plan_excutor to execute the plan. 
+        system_message='''Planner. If question related to code, suggest a plan and interact with ctitic to confirm this plan. Then give the plan to code_generator and plan_excutor to execute the plan. 
     The plan may involve an code_generator who can write code and a plan_excutor who doesn't write code.
     Explain the plan first. Be clear which step is performed by an code_generator, and which step is performed by a code_generator
     ''',
@@ -87,7 +87,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
 
     answer_A = autogen.AssistantAgent(
         name="answer_A",
-        system_message='answer_A, if code_generator,code_proxy,planner,critic did not response and only questions that do not require code, then answer the question. Reply "TERMINATE" in the end when everything is done.',
+        system_message='answer_A, if code_generator,code_proxy,planner,critic did not response and only questions that do not require code, then answer the question using HTML formate. Reply "TERMINATE" in the end when everything is done.',
         llm_config=config_list_gpt4,
         socket_room_id = resid,
     )
