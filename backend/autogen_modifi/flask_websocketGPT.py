@@ -165,7 +165,6 @@ def handle_connect():
     user_proxys[request.sid], assistants[request.sid] = groupchat_a(config_list_gpt4,request.sid)
     file_path = './flask_React.py'
 
-
     # with open(file_path, 'rb') as file:
     #     file_data = file.read()
     #     encoded_data = base64.b64encode(file_data).decode('utf-8')  # Encode to base64 and then decode to string
