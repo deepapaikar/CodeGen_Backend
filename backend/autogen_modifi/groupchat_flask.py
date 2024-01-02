@@ -42,10 +42,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
 
     planner = autogen.AssistantAgent(
         name="Planner",
-        system_message='''Planner. If question related to code, suggest a plan and interact with ctitic to confirm this plan. Then give the plan to code_generator and plan_excutor to execute the plan. 
-    The plan may involve an code_generator who can write code and a plan_excutor who doesn't write code.
-    Explain the plan first. Be clear which step is performed by an code_generator, and which step is performed by a code_generator
-    ''',
+        system_message='''Select Planner if the question is moderately complicated or complex. Generate a plan, suggest it, and interact with the Critic to confirm it. Then, pass the plan to the code_generator and plan_executor for implementation. The plan may involve a code_generator for coding tasks and a plan_executor for non-coding tasks. Clearly explain the plan and specify which steps are performed by whom.''',
         llm_config=config_list_gpt4,
         socket_room_id = resid,
     )
@@ -60,10 +57,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
     code_generator = autogen.AssistantAgent(
         name="code_generator",
         llm_config=config_list_gpt4,
-        system_message='''code_generator. You follow the suggested plan by Planner and Crtic. You  suggest python code (in a python coding block) or shell script (in a sh coding block)  to solve tasks. When using code, you must indicate the script type in the code block. Wrap the code in a code block that specifies the script type. The user can't modify your code. So do not suggest incomplete code which requires others to modify. Don't use a code block if it's not intended to be executed by the code_proxy.
-        If you want the user to save the code in a file before executing it, put # filename: <filename> inside the code block as the first line. Don't include multiple code blocks in one response. Do not ask others to copy and paste the result. Check the execution result returned by the code_proxy.
-        If the result indicates there is an error, fix the error and output the code again. Suggest the full code instead of partial code or code changes. If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
-        ''',
+        system_message='''The code_generator should be chosen only when a question or task explicitly requires writing code or a program. This role follows the plan suggested by the Planner and Critic. It involves suggesting Python code (in a Python coding block) or shell scripts (in a shell coding block) to solve tasks. Key points include: Code Specification: Always indicate the script type in the code block. Wrap the code in a code block that specifies this type. The code provided is final; users should not be expected to modify it. Code Execution: If the code is meant to be saved in a file before execution, insert a comment as the first line in the code block, like # filename: <filename>. Do not include multiple code blocks in a single response. Avoid asking others to copy and paste the result. Check the execution result returned by the code_proxy. Error Handling and Completion: If the execution result indicates an error, correct the error and provide the updated code. Always suggest complete code solutions rather than partial code or code changes. If the error persists or the task remains unsolved, reassess the approach, gather more information if necessary, and consider alternative solutions. The code_generator role is not responsible for general technical explanations or answers to questions that do not specifically require coding. It is dedicated solely to tasks where code creation and execution are the primary focus.''',
         socket_room_id = resid,
     )
 
@@ -78,7 +72,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
 
     critic = autogen.AssistantAgent(
         name="Critic",
-        system_message="Critic. Double check plan, claims, code from other agents and provide feedback. Check whether the plan includes adding verifiable info such as source URL.",
+        system_message="Critic. Double check plan, claims, code from other agents and provide feedback. Check whether the plan includes adding verifiable info such as source URL. if the goal of plan is achieved, then summarize the result and end with 'TERMINATE' in English.",
         llm_config=config_list_gpt4,
         socket_room_id = resid,
     )
@@ -87,7 +81,7 @@ def groupchat_a(config_list_gpt4,resid=None, doc_path = None):
 
     answer_A = autogen.AssistantAgent(
         name="answer_A",
-        system_message='answer_A, if code_generator,code_proxy,planner,critic did not response and only questions that do not require code, then answer the question using HTML formate. Reply "TERMINATE" in the end when everything is done.',
+        system_message=" Choose answer_A for straightforward questions that don't require coding, programming, or complex planning. Be the first to respond. Conclude with 'TERMINATE' in English.",
         llm_config=config_list_gpt4,
         socket_room_id = resid,
     )
