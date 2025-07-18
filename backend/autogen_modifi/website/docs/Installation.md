@@ -8,8 +8,8 @@ When not using a docker container, we recommend using a virtual environment to i
 
 You can create a virtual environment with `venv` as below:
 ```bash
-python3 -m venv pyautogen
-source pyautogen/bin/activate
+python3 -m venv ag2
+source ag2/bin/activate
 ```
 
 The following command will deactivate the current `venv` environment:
@@ -22,8 +22,8 @@ deactivate
 Another option is with `Conda`, Conda works better at solving dependency conflicts than pip. You can install it by following [this doc](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html),
 and then create a virtual environment as below:
 ```bash
-conda create -n pyautogen python=3.10  # python 3.10 is recommended as it's stable and not too old
-conda activate pyautogen
+conda create -n ag2 python=3.10  # python 3.10 is recommended as it's stable and not too old
+conda activate ag2
 ```
 
 The following command will deactivate the current `conda` environment:
@@ -38,21 +38,21 @@ Now, you're ready to install AutoGen in the virtual environment you've just crea
 AutoGen requires **Python version >= 3.8, < 3.12**. It can be installed from pip:
 
 ```bash
-pip install pyautogen
+pip install ag2
 ```
 
-`pyautogen<0.2` requires `openai<1`. Starting from pyautogen v0.2, `openai>=1` is required.
+`ag2<0.2` requires `openai<1`. Starting from ag2 v0.2, `openai>=1` is required.
 
 <!--
 or conda:
 ```
-conda install pyautogen -c conda-forge
+conda install ag2 -c conda-forge
 ``` -->
 
 ### Migration guide to v0.2
 
 openai v1 is a total rewrite of the library with many breaking changes. For example, the inference requires instantiating a client, instead of using a global class method.
-Therefore, some changes are required for users of `pyautogen<0.2`.
+Therefore, some changes are required for users of `ag2<0.2`.
 
 - `api_base` -> `base_url`, `request_timeout` -> `timeout` in `llm_config` and `config_list`. `max_retry_period` and `retry_wait_time` are deprecated. `max_retries` can be set for each client.
 - MathChat is unsupported until it is tested in future release.
@@ -82,9 +82,9 @@ pip install docker
 
 - #### blendsearch
 
-`pyautogen<0.2` offers a cost-effective hyperparameter optimization technique [EcoOptiGen](https://arxiv.org/abs/2303.04673) for tuning Large Language Models. Please install with the [blendsearch] option to use it.
+`ag2<0.2` offers a cost-effective hyperparameter optimization technique [EcoOptiGen](https://arxiv.org/abs/2303.04673) for tuning Large Language Models. Please install with the [blendsearch] option to use it.
 ```bash
-pip install "pyautogen[blendsearch]<0.2"
+pip install "ag2[blendsearch]<0.2"
 ```
 
 Example notebooks:
@@ -95,9 +95,9 @@ Example notebooks:
 
 - #### retrievechat
 
-`pyautogen` supports retrieval-augmented generation tasks such as question answering and code generation with RAG agents. Please install with the [retrievechat] option to use it.
+`ag2` supports retrieval-augmented generation tasks such as question answering and code generation with RAG agents. Please install with the [retrievechat] option to use it.
 ```bash
-pip install "pyautogen[retrievechat]"
+pip install "ag2[retrievechat]"
 ```
 
 RetrieveChat can handle various types of documents. By default, it can process
@@ -122,7 +122,7 @@ Example notebooks:
 
 To use TeachableAgent, please install AutoGen with the [teachable] option.
 ```bash
-pip install "pyautogen[teachable]"
+pip install "ag2[teachable]"
 ```
 
 Example notebook:  [Chatting with TeachableAgent](https://github.com/microsoft/autogen/blob/main/notebook/agentchat_teachability.ipynb)
@@ -133,7 +133,7 @@ Example notebook:  [Chatting with TeachableAgent](https://github.com/microsoft/a
 
 We offered Multimodal Conversable Agent and LLaVA Agent. Please install with the [lmm] option to use it.
 ```bash
-pip install "pyautogen[lmm]"
+pip install "ag2[lmm]"
 ```
 
 Example notebooks:
@@ -143,9 +143,9 @@ Example notebooks:
 
 - #### mathchat
 
-`pyautogen<0.2` offers an experimental agent for math problem solving. Please install with the [mathchat] option to use it.
+`ag2<0.2` offers an experimental agent for math problem solving. Please install with the [mathchat] option to use it.
 ```bash
-pip install "pyautogen[mathchat]<0.2"
+pip install "ag2[mathchat]<0.2"
 ```
 
 Example notebooks:
